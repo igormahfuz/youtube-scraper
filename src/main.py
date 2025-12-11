@@ -7,19 +7,23 @@ from apify import Actor
 import asyncio
 import yt_dlp
 import os
+import mimetypes
+import uuid
 
 async def download_video(video_url: str, quality: str, proxy_url: str | None) -> dict:
     """
-    Downloads a YouTube video using yt-dlp.
+    Downloads a YouTube video using yt-dlp, saves it to the key-value store,
+    and returns a public URL for download.
     """
     Actor.log.info(f"Starting download for video: {video_url} with quality: {quality}")
 
-    output_path = './storage/datasets/default'
-    os.makedirs(output_path, exist_ok=True)
+    # Temporary path to store the downloaded video
+    temp_path = './temp_video'
+    os.makedirs(temp_path, exist_ok=True)
 
     ydl_opts = {
         'format': quality,
-        'outtmpl': os.path.join(output_path, '%(title)s.%(ext)s'),
+        'outtmpl': os.path.join(temp_path, '%(title)s.%(ext)s'),
         'noplaylist': True,
         'quiet': True,
         'progress_hooks': [lambda d: Actor.log.info(f"yt-dlp status: {d['status']}") if d['status'] in ['downloading', 'finished'] else None],
@@ -32,30 +36,55 @@ async def download_video(video_url: str, quality: str, proxy_url: str | None) ->
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_dict = ydl.extract_info(video_url, download=True)
-            file_path = ydl.prepare_filename(info_dict)
+            local_file_path = ydl.prepare_filename(info_dict)
 
-            Actor.log.info(f"Successfully downloaded video to: {file_path}")
+            if not local_file_path or not os.path.exists(local_file_path):
+                raise FileNotFoundError(f"yt-dlp did not download the file for URL: {video_url}")
+
+            Actor.log.info(f"Successfully downloaded video to temporary path: {local_file_path}")
+
+            # Read the downloaded file
+            with open(local_file_path, 'rb') as f:
+                video_content = f.read()
             
+            # Get mime type
+            mime_type, _ = mimetypes.guess_type(local_file_path)
+            if not mime_type:
+                mime_type = 'application/octet-stream'
+
+            # Save to key-value store
+            key_value_store_id = os.environ.get('APIFY_DEFAULT_KEY_VALUE_STORE_ID')
+            # Sanitize title for key name and add UUID to avoid collisions
+            sanitized_title = "".join(c for c in info_dict.get('title', 'video') if c.isalnum() or c in (' ', '_')).rstrip()
+            record_key = f"{sanitized_title[:50]}_{uuid.uuid4().hex[:8]}"
+
+            await Actor.set_value(record_key, video_content, content_type=mime_type)
+            
+            # Construct the public URL
+            download_url = f"https://api.apify.com/v2/key-value-stores/{key_value_store_id}/records/{record_key}"
+
+            Actor.log.info(f"Saved video to key-value store. Download link: {download_url}")
+
             # Push metadata to dataset
-            await Actor.push_data({
+            output_data = {
                 "video_url": video_url,
                 "title": info_dict.get('title'),
                 "uploader": info_dict.get('uploader'),
                 "duration": info_dict.get('duration'),
-                "file_path": file_path,
+                "download_url": download_url,
                 "error": None,
-            })
-            return {"status": "success", "file_path": file_path, "video_url": video_url}
+            }
+            await Actor.push_data(output_data)
 
-    except yt_dlp.utils.DownloadError as e:
-        error_message = f"yt-dlp download failed: {e}"
-        Actor.log.error(error_message)
-        await Actor.push_data({"video_url": video_url, "error": error_message})
-        return {"status": "error", "error": error_message, "video_url": video_url}
+            # Clean up the local file
+            os.remove(local_file_path)
+
+            return {"status": "success", "download_url": download_url, "video_url": video_url}
+
     except Exception as e:
         error_message = f"An unexpected error occurred: {type(e).__name__}: {e}"
         Actor.log.error(error_message)
-        await Actor.push_data({"video_url": video_url, "error": error_message})
+        await Actor.push_data({"video_url": video_url, "title": None, "uploader": None, "duration": None, "download_url": None, "error": error_message})
         return {"status": "error", "error": error_message, "video_url": video_url}
 
 async def main() -> None:
@@ -68,7 +97,8 @@ async def main() -> None:
         proxy_type = inp.get("proxyType", "RESIDENTIAL")
 
         if not video_urls:
-            raise ValueError("Input 'videoUrls' is required and must be a non-empty list.")
+            await Actor.fail(status_message="Input 'videoUrls' is required and must be a non-empty list.")
+            return
 
         proxy_configuration = None
         if proxy_type != "NONE":
@@ -76,9 +106,11 @@ async def main() -> None:
             try:
                 proxy_configuration = await Actor.create_proxy_configuration(groups=[proxy_type])
             except Exception as e:
-                Actor.log.error(f"Could not create proxy configuration for group '{proxy_type}'. "
-                              f"This might be a permission issue with your Apify account. Error: {e}")
-                raise
+                await Actor.fail(
+                    status_message=f"Could not create proxy configuration for group '{proxy_type}'. "
+                                 f"This might be a permission issue with your Apify account. Error: {e}"
+                )
+                return
         else:
             Actor.log.info("Proxy is disabled.")
 
@@ -105,7 +137,7 @@ async def main() -> None:
                 success_count += 1
                 msg += " ✔"
             else:
-                msg += f" ❌ ({result['error']})"
+                msg += f" ❌ ({result.get('error', 'Unknown error')})"
             
             Actor.log.info(msg)
             await Actor.set_status_message(msg)

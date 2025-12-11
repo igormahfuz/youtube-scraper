@@ -1,46 +1,40 @@
 {
     "actorOutputSchemaVersion": 1,
     "properties": {
-        "username": {
+        "video_url": {
             "type": "string",
-            "title": "Username",
-            "description": "O nome de usuário do Instagram.",
-            "template": "{{username}}"
+            "title": "Video URL",
+            "description": "The original URL of the YouTube video.",
+            "template": "{{video_url}}"
         },
-        "followers": {
+        "title": {
             "type": "string",
-            "title": "Seguidores",
-            "description": "O número de seguidores.",
-            "template": "{{followers}}"
+            "title": "Title",
+            "description": "The title of the YouTube video.",
+            "template": "{{title}}"
         },
-        "posts_analyzed": {
+        "uploader": {
             "type": "string",
-            "title": "Posts Analisados",
-            "description": "O número de posts analisados (máx. 12).",
-            "template": "{{posts_analyzed}}"
+            "title": "Uploader",
+            "description": "The uploader of the YouTube video.",
+            "template": "{{uploader}}"
         },
-        "avg_likes": {
+        "duration": {
             "type": "string",
-            "title": "Média de Likes",
-            "description": "A média de likes nos posts analisados.",
-            "template": "{{avg_likes}}"
+            "title": "Duration (s)",
+            "description": "The duration of the video in seconds.",
+            "template": "{{duration}}"
         },
-        "avg_comments": {
+        "download_url": {
             "type": "string",
-            "title": "Média de Comentários",
-            "description": "A média de comentários nos posts analisados.",
-            "template": "{{avg_comments}}"
-        },
-        "engagement_rate_pct": {
-            "type": "string",
-            "title": "Taxa de Engajamento (%)",
-            "description": "A taxa de engajamento calculada.",
-            "template": "{{engagement_rate_pct}}"
+            "title": "Download Link",
+            "description": "Direct link to download the video file.",
+            "template": "{{download_url}}"
         },
         "error": {
             "type": "string",
-            "title": "Erro",
-            "description": "Mensagem de erro, se houver.",
+            "title": "Error",
+            "description": "Error message if the download failed.",
             "template": "{{error}}"
         }
     }
