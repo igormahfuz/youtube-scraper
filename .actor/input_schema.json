@@ -18,7 +18,7 @@
       "editor": "select",
       "description": "Select the desired video quality.",
       "default": "best",
-      "options": [
+      "enum": [
         "best",
         "worst",
         "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
