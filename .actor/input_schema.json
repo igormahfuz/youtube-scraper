@@ -1,0 +1,34 @@
+{
+  "title": "Instagram Profile Scraper Input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "usernames": {
+      "title": "Instagram Usernames",
+      "type": "array",
+      "editor": "stringList",
+      "description": "Enter a list of Instagram usernames to scrape.",
+      "prefill": [
+        "apify",
+        "instagram"
+      ]
+    },
+    "concurrency": {
+      "title": "Concurrency",
+      "type": "integer",
+      "editor": "number",
+      "description": "Number of profiles to process in parallel. Higher concurrency is faster but may increase the chance of blocks.",
+      "default": 50
+    },
+    "proxyType": {
+      "title": "Proxy Group (or NONE)",
+      "type": "string",
+      "editor": "textfield",
+      "description": "Enter the exact name of your proxy group from the Apify dashboard (e.g., RESIDENTIAL). To disable proxies, enter NONE.",
+      "default": "RESIDENTIAL"
+    }
+  },
+  "required": [
+    "usernames"
+  ]
+}
