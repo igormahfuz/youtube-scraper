@@ -3,7 +3,7 @@
 # You can also use any other image from Docker Hub.
 FROM apify/actor-python:3.13
 
-RUN apt-get update && apt-get install -y ffmpeg
+RUN apt-get update && apt-get install -y ffmpeg nodejs
 
 # Second, copy just requirements.txt into the Actor image,
 # since it should be the only file that affects the dependency install in the next step,

@@ -9,6 +9,7 @@ import yt_dlp
 import os
 import mimetypes
 import uuid
+import re
 
 async def download_video(video_url: str, quality: str, proxy_url: str | None) -> dict:
     """
@@ -54,13 +55,21 @@ async def download_video(video_url: str, quality: str, proxy_url: str | None) ->
 
             # Save to key-value store
             key_value_store_id = os.environ.get('APIFY_DEFAULT_KEY_VALUE_STORE_ID')
-            # Sanitize title for key name and add UUID to avoid collisions
-            sanitized_title = "".join(c for c in info_dict.get('title', 'video') if c.isalnum() or c in (' ', '_')).rstrip()
-            record_key = f"{sanitized_title[:50]}_{uuid.uuid4().hex[:8]}"
+
+            # Sanitize title for key name
+            title = info_dict.get('title', 'video')
+            # Replace invalid characters with an underscore
+            sanitized_title = re.sub(r'[^a-zA-Z0-9!-_.\'()]', '_', title)
+            # Replace multiple underscores with a single one
+            sanitized_title = re.sub(r'__+', '_', sanitized_title)
+            
+            # Add UUID to avoid collisions and ensure uniqueness
+            record_key = f"{sanitized_title[:200]}_{uuid.uuid4().hex}"
 
             await Actor.set_value(record_key, video_content, content_type=mime_type)
             
             # Construct the public URL
+            # The public URL is in the format: https://api.apify.com/v2/key-value-stores/{STORE_ID}/records/{KEY_NAME}?disableRedirect=true
             download_url = f"https://api.apify.com/v2/key-value-stores/{key_value_store_id}/records/{record_key}"
 
             Actor.log.info(f"Saved video to key-value store. Download link: {download_url}")
