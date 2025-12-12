@@ -1,113 +1,109 @@
-# Instagram Engagement Rate Calculator
+# Actor – YouTube Video Downloader
 
-This Apify Actor calculates the engagement rate of any public Instagram profile quickly and efficiently. It does not require a login or cookies, using the platform's public endpoint to extract the data.
+[![Apify Actor](https://img.shields.io/badge/Apify-Actor-2f77ff)](https://apify.com) [![Python](https://img.shields.io/badge/Python-3.10%2B-blue)](https://www.python.org/) [![yt-dlp](https://img.shields.io/badge/yt--dlp-supported-orange)](https://github.com/yt-dlp/yt-dlp) [![Docker](https://img.shields.io/badge/Docker-ready-2496ED)](https://www.docker.com/)
 
-The Actor is designed to be robust and scalable, making it ideal for analyzing large lists of profiles for market research, influencer analysis, and competitive studies.
+## Overview
+This Actor downloads YouTube videos using `yt-dlp`, stores the file in Apify Key-Value Store with a public download link, and pushes clean metadata to Dataset (title, uploader, duration, original URL, error).
 
-## ✨ Features
+## Features
+- Download videos from a list of YouTube URLs
+- Quality selection via `yt-dlp` format strings (with safe presets)
+- Apify proxy groups support (`RESIDENTIAL`, etc.) or `NONE` to disable
+- Public download URLs via Key-Value Store
+- Structured metadata in Dataset
 
-- **No Login Required:** Does not require your Instagram credentials.
-- **Analyzes Last 12 Posts:** Provides a recent and relevant overview of engagement.
-- **Comprehensive Engagement Metric:** The calculation includes likes, comments, and, for videos, view counts.
-- **High Speed:** Processes hundreds of profiles simultaneously with configurable concurrency.
-- **Robust and Reliable:** Uses the Apify residential proxy network and implements an automatic retry system to handle network errors.
-- **Monetization-Ready:** Optimized for the Pay-per-result (PPR) model.
+## Input Parameters
+- `videoUrls` (`Array<string>`, required): List of YouTube video URLs
+- `quality` (`String`, optional, default `best`): `yt-dlp` format/preset. Examples: `best`, `worst`, `bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best`, `bestvideo[height<=1080]+bestaudio/best[height<=1080]`, `bestvideo[height<=720]+bestaudio/best[height<=720]`, `bestvideo[height<=480]+bestaudio/best[height<=480]`, `bestvideo[height<=360]+bestaudio/best[height<=360]`
+- `proxyType` (`String`, optional, default `RESIDENTIAL`): Exact Apify proxy group name. Use `NONE` to disable
 
----
-
-## 💰 Cost of Usage & Monetization
-
-This Actor is monetized using the **Pay-per-result (PPR)** model.
-
-- **Actor Price:** **$0.50 per 1,000 successfully analyzed profiles**.
-- **Apify Platform Costs:** In addition to the Actor's price, you will also be charged for Apify platform usage costs (such as Residential Proxy usage and Compute Units).
-
-You only pay for profiles that are successfully processed and return data. Profiles that result in an error after all retries are not counted towards the cost.
-
----
-
-## 📥 Input
-
-The Actor requires a list of Instagram usernames and allows you to configure the proxy settings and concurrency.
-
-**Input Example:**
-
+### Input Example
 ```json
 {
-  "usernames": [
-    "apify",
-    "instagram"
+  "videoUrls": [
+    "https://www.youtube.com/watch?v=XqZsoesa55w",
+    "https://www.youtube.com/watch?v=PsNyag6JGv4",
+    "https://www.youtube.com/watch?v=ctEksNz7tqg"
   ],
-  "concurrency": 50,
-  "proxyGroup": "RESIDENTIAL"
+  "quality": "best",
+  "proxyType": "RESIDENTIAL"
 }
 ```
 
-| Field         | Type             | Description                                                                                                                                                           | Default       |
-|---------------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| `usernames`   | `Array<string>`  | **Required.** A list of Instagram profile usernames to be analyzed.                                                                                                   | `[]`          |
-| `concurrency` | `Number`         | **Optional.** The number of profiles to process in parallel. A lower number is slower but less likely to be blocked.                                                  | `50`          |
-| `proxyGroup`  | `String`         | **Optional.** The name of the Apify proxy group to use. To find your available group names, go to the Proxy section in your Apify dashboard. To disable proxies, enter `NONE`. | `RESIDENTIAL` |
+## During the Run
+- Progress is logged and set as `statusMessage`: `processed/total → URL ✔/❌`
+- Invalid input (e.g., empty `videoUrls`) immediately fails with explanation
 
----
+## Output
+- Key-Value Store: video file saved under a unique key. Public link format:
+  `https://api.apify.com/v2/key-value-stores/{STORE_ID}/records/{KEY}`
+- Dataset item fields per video:
+  - `video_url`, `title`, `uploader`, `duration`, `download_url`, `error`
 
-## 📤 Output
-
-The Actor returns one result for each successfully analyzed profile, containing detailed information.
-
-**Output Example:**
-
+### Example Dataset Item
 ```json
-[{
-  "username": "apify",
-  "followers": 1633,
-  "following": 12,
-  "profile_pic_url_hd": "https://...",
-  "biography": "Apify is a web scraping and automation platform...",
-  "external_url": "https://apify.com",
-  "business_email": "support@apify.com",
-  "business_phone_number": null,
-  "category_name": "Technology Company",
-  "posts_analyzed": 12,
-  "avg_likes": 45,
-  "avg_comments": 8,
-  "avg_video_views": 0,
-  "engagement_rate_pct": 3.25,
-  "recent_posts": [
-    {
-      "url": "https://www.instagram.com/p/Cxyz.../",
-      "likes": 50,
-      "comments": 10,
-      "video_views": null,
-      "caption": "Check out our new feature!",
-      "thumbnail_src": "https://..."
-    }
-  ],
+{
+  "video_url": "https://www.youtube.com/watch?v=ADs8tvU2xDc",
+  "title": "...",
+  "uploader": "Red Bull",
+  "duration": 123,
+  "download_url": "https://api.apify.com/v2/key-value-stores/STORE_ID/records/ADs8tvU2xDc_...",
   "error": null
-}]
+}
 ```
 
-| Field                    | Type     | Description                                                                 |
-|--------------------------|----------|---------------------------------------------------------------------------|
-| `username`               | `String` | The username of the analyzed profile.                                       |
-| `followers`              | `Number` | The total number of followers for the profile.                              |
-| `following`              | `Number` | The total number of accounts the profile is following.                      |
-| `profile_pic_url_hd`     | `String` | URL to the high-definition profile picture.                                 |
-| `biography`              | `String` | The user's profile biography, if available.                                 |
-| `external_url`           | `String` | The external website link from the bio, if available.                       |
-| `business_email`         | `String` | The user's public business email, if available.                             |
-| `business_phone_number`  | `String` | The user's public business phone number, if available.                      |
-| `category_name`          | `String` | The category of the profile (e.g., "Technology Company").                 |
-| `posts_analyzed`         | `Number` | The number of recent posts analyzed (up to 12).                           |
-| `avg_likes`              | `Number` | The average number of likes per post.                                       |
-| `avg_comments`           | `Number` | The average number of comments per post.                                    |
-| `avg_video_views`        | `Number` | The average number of views for video posts.                                |
-| `engagement_rate_pct`    | `Number` | The engagement rate as a percentage. `(avg_engagement_score / followers) * 100` |
-| `recent_posts`           | `Array`  | A list containing details of the last 12 posts.                             |
-| `error`                  | `String` | If an error occurs, this field will contain the description. Otherwise, it will be `null`. |
+## Use on Apify (UI)
+1. Open the Actor in Apify
+2. Fill the input form (`videoUrls`, optional `quality`, `proxyType`)
+3. Run and monitor `statusMessage`. Files appear in KV Store; metadata in Dataset
 
----
+## Run via API
+- Start a run:
+```bash
+curl -X POST "https://api.apify.com/v2/acts/OWNER~youtube-video-downloader/runs?token=YOUR_APIFY_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "videoUrls": [
+      "https://www.youtube.com/watch?v=XqZsoesa55w"
+    ],
+    "quality": "best",
+    "proxyType": "RESIDENTIAL"
+  }'
+```
+- Get items from Dataset:
+```bash
+curl "https://api.apify.com/v2/datasets/DATASET_ID/items?clean=true"
+```
+- Download file via `download_url` from the dataset item
 
-## ⚠️ Disclaimer
+### Node.js example
+```js
+const fetch = require('node-fetch');
+const input = {
+  videoUrls: ["https://www.youtube.com/watch?v=XqZsoesa55w"],
+  quality: "best",
+  proxyType: "RESIDENTIAL",
+};
+const res = await fetch("https://api.apify.com/v2/acts/OWNER~youtube-video-downloader/runs?token=YOUR_APIFY_TOKEN", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(input),
+});
+const run = await res.json();
+```
 
-This Actor is not an official product of Instagram. It was developed independently to extract public data. Use it responsibly and in compliance with the terms of service of both Apify and Instagram.
+## Run Locally
+```bat
+apify run
+```
+Or with Docker on Windows:
+```bat
+docker build -t youtube-video-downloader .
+docker run -e APIFY_TOKEN=YOUR_APIFY_TOKEN -v %CD%\apify_storage:/app/apify_storage youtube-video-downloader
+```
+
+## Performance Notes
+Compute unit usage depends on number of videos, selected quality, and proxy/network stability. Typical runs process dozens of videos in minutes.
+
+## Bugs, fixes, updates, and changelog
+This Actor is under active development. If you have feature requests or find bugs, please open an issue.
