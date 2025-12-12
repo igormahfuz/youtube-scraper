@@ -1,86 +1,46 @@
 {
     "actorSpecification": 1,
-    "name": "instagram-engagement-scraper",
-    "version": "0.1",
+    "name": "youtube-video-downloader",
+    "version": "1.0",
     "buildTag": "latest",
     "storages": {
         "dataset": {
             "actorSpecification": 1,
             "views": {
                 "overview": {
-                    "title": "Instagram Profile Details",
+                    "title": "YouTube Video Details",
                     "transformation": {
                         "fields": [
-                            "username",
-                            "followers",
-                            "following",
-                            "engagement_rate_pct",
-                            "avg_likes",
-                            "avg_comments",
-                            "category_name",
-                            "biography",
-                            "external_url",
-                            "business_email",
-                            "business_phone_number",
-                            "profile_pic_url_hd",
-                            "recent_posts",
+                            "title",
+                            "uploader",
+                            "duration",
+                            "download_url",
+                            "video_url",
                             "error"
                         ]
                     },
                     "display": {
                         "component": "table",
                         "properties": {
-                            "username": {
-                                "label": "Username",
+                            "title": {
+                                "label": "Title",
                                 "format": "text"
                             },
-                            "followers": {
-                                "label": "Followers",
-                                "format": "number"
-                            },
-                            "following": {
-                                "label": "Following",
-                                "format": "number"
-                            },
-                            "engagement_rate_pct": {
-                                "label": "Engagement Rate (%)",
-                                "format": "number"
-                            },
-                            "avg_likes": {
-                                "label": "Avg. Likes",
-                                "format": "number"
-                            },
-                            "avg_comments": {
-                                "label": "Avg. Comments",
-                                "format": "number"
-                            },
-                            "category_name": {
-                                "label": "Category",
+                            "uploader": {
+                                "label": "Uploader",
                                 "format": "text"
                             },
-                            "biography": {
-                                "label": "Biography",
-                                "format": "text"
+                            "duration": {
+                                "label": "Duration (s)",
+                                "format": "number"
                             },
-                            "external_url": {
-                                "label": "Website",
+                            "download_url": {
+                                "label": "Download Link",
                                 "format": "url"
                             },
-                            "business_email": {
-                                "label": "Email",
-                                "format": "text"
-                            },
-                            "business_phone_number": {
-                                "label": "Phone",
-                                "format": "text"
-                            },
-                            "profile_pic_url_hd": {
-                                "label": "Profile Picture HD",
+                            "video_url": {
+                                "label": "Original URL",
                                 "format": "url"
-                            },
-                            "recent_posts": {
-                                "label": "Recent Posts",
-                                "format": "json"
                             },
                             "error": {
                                 "label": "Error",
